@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" content="#FFF8E7" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="description"
+      content="SunnySide helps you find nearby beaches with the best wind and shelter."
+    />
+
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icon.svg" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="app.css" />
+    <title>SunnySide</title>
+  </head>
+  <body>
+    <header>
+      <div class="app-header-row">
+        <h1>🏖️ SunnySide</h1>
+        <button class="icon-btn" id="aboutBtn" type="button" aria-label="How we decide">?</button>
+      </div>
+      <p class="subtitle">A simple “best beach right now”</p>
+    </header>
+
+    <div id="controls">
+      <form id="search-form" class="input-group" autocomplete="off">
+        <input type="text" id="cityInput" placeholder="Enter a place (e.g. Honolulu)" />
+        <button class="btn-search" id="searchBtn" type="submit">Go</button>
+      </form>
+
+      <button class="btn-gps" id="gpsBtn" type="button">
+        <span>📍 Find Near Me</span>
+        <div class="loader" id="loader" aria-hidden="true"></div>
+      </button>
+
+      <div class="options-row" aria-label="Search options">
+        <label class="option">
+          <span class="opt-label">Search Area</span>
+          <select id="radiusKm" name="radiusKm">
+            <option value="10">Close</option>
+            <option value="25" selected>Nearby</option>
+            <option value="50">Explore</option>
+            <option value="75">Far</option>
+          </select>
+        </label>
+      </div>
+
+      <button class="btn-secondary" id="analyze-more" type="button" hidden>Show more beaches</button>
+    </div>
+
+    <div id="status" aria-live="polite"></div>
+    <section id="topPick" class="top-pick" hidden></section>
+    <div id="results"></div>
+
+    <div id="aboutModal" class="modal" hidden>
+      <div class="modal-backdrop" data-close="true"></div>
+      <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+        <div class="modal-head">
+          <h2 id="aboutTitle">How SunnySide picks</h2>
+          <button class="icon-btn" id="aboutClose" type="button" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <p>
+            SunnySide does a nerdy wind + shelter check in the background, then shows only quick labels.
+          </p>
+          <ul>
+            <li>Finds nearby beaches/bays/coves from OpenStreetMap.</li>
+            <li>Gets current wind (speed, gust, direction) from Open‑Meteo.</li>
+            <li>Estimates hill/headland shelter by sampling elevations upwind.</li>
+            <li>Scores “how comfy to sit/lie down” using pedestrian wind comfort criteria (Lawson/Davenport).</li>
+          </ul>
+          <details>
+            <summary>Nerdy details</summary>
+            <p>
+              Converts 10m wind to “at-the-beach” height using a log wind profile:
+              <code>U(z)=U(10m)*ln(z/z0)/ln(10/z0)</code>.
+            </p>
+            <p>
+              Shelter uses the upwind blocking angle <code>atan(Δh/d)</code> (bigger/closer hills → more shelter).
+            </p>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
