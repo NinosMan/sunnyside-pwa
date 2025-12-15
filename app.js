@@ -40,6 +40,12 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function kindBonus(kind) {
+  if (kind === "beach") return 12;
+  if (kind === "bay" || kind === "cove") return -7;
+  return 0; // "spot" or unknown
+}
+
 function lerp(a, b, t) {
   return a + (b - a) * clamp(t, 0, 1);
 }
@@ -1033,13 +1039,15 @@ function effectiveWindKmh({ windKmh, gustKmh }) {
   return windKmh + (gustKmh - windKmh) * gustWeight;
 }
 
-function computeScoreNow({ feltWindKmh, distanceKm, radiusKm }) {
+function computeScoreNow({ feltWindKmh, distanceKm, radiusKm, kind }) {
   const windMps = Number.isFinite(feltWindKmh) ? feltWindKmh / 3.6 : null;
   const comfortWind = sunbathingComfortFromWindMps(windMps);
   const comfortSun = sunFactor(state.windAtSearch?.isDay, state.windAtSearch?.cloudCoverPct);
   const combinedComfort = clamp(comfortWind * 0.7 + comfortSun * 0.3, 0, 1);
   const distancePenalty = clamp((distanceKm ?? Infinity) / radiusKm, 0, 1) * 12;
-  return clamp(combinedComfort * 100 - distancePenalty, 0, 100);
+  const baseScore = combinedComfort * 100 - distancePenalty;
+  const bonus = kindBonus(kind);
+  return clamp(baseScore + bonus, 0, 100);
 }
 
 async function analyzeBeach(beach, { radiusKm, signal, fallbackWind }) {
@@ -1098,7 +1106,12 @@ async function analyzeBeach(beach, { radiusKm, signal, fallbackWind }) {
   const exposureFactor = 0.65 + 0.35 * exposure;
   const feltWindKmh = Number.isFinite(sheltered2m) ? sheltered2m * exposureFactor : null;
 
-  const score = computeScoreNow({ feltWindKmh, distanceKm: beach.distanceKm, radiusKm });
+  const score = computeScoreNow({
+    feltWindKmh,
+    distanceKm: beach.distanceKm,
+    radiusKm,
+    kind: beach.kind
+  });
 
   return {
     ...beach,
