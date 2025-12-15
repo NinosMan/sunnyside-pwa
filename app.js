@@ -78,7 +78,11 @@ function mergeAbortSignals(signals) {
   return controller.signal;
 }
 
-async function fetchJson(url, { signal, timeoutMs, ...init } = {}) {
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchJson(url, { signal, timeoutMs, retries = 0, retryDelay = 1000, ...init } = {}) {
   const timeoutController = timeoutMs ? new AbortController() : null;
   const timeoutHandle = timeoutController
     ? setTimeout(() => timeoutController.abort(new Error("Request timed out.")), timeoutMs)
@@ -102,7 +106,24 @@ async function fetchJson(url, { signal, timeoutMs, ...init } = {}) {
         // no-op
       }
       const snippet = detail ? ` ${detail.slice(0, 240)}` : "";
-      throw new Error(`Request failed (${res.status}).${snippet}`);
+      const error = new Error(`Request failed (${res.status}).${snippet}`);
+      error.status = res.status;
+
+      // Retry on rate limit errors (429) or server errors (5xx)
+      if (retries > 0 && (res.status === 429 || res.status >= 500)) {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        await sleep(retryDelay);
+        // Exponential backoff for next retry
+        return fetchJson(url, {
+          signal,
+          timeoutMs,
+          retries: retries - 1,
+          retryDelay: retryDelay * 2,
+          ...init
+        });
+      }
+
+      throw error;
     }
     return await res.json();
   } finally {
@@ -801,7 +822,7 @@ async function fetchWindAt({ lat, lon, signal }) {
   url.searchParams.set("wind_speed_unit", "kmh");
   url.searchParams.set("timezone", "auto");
 
-  const json = await fetchJson(url.toString(), { signal, timeoutMs: 25_000 });
+  const json = await fetchJson(url.toString(), { signal, timeoutMs: 15_000, retries: 2 });
   const current = json?.current;
   const windSpeedKmh = Number(current?.wind_speed_10m);
   const windDirDeg = Number(current?.wind_direction_10m);
@@ -849,7 +870,7 @@ async function fetchElevations(points, { signal }) {
   url.searchParams.set("longitude", lons);
 
   try {
-    const json = await fetchJson(url.toString(), { signal, timeoutMs: 25_000 });
+    const json = await fetchJson(url.toString(), { signal, timeoutMs: 12_000, retries: 2 });
     const elevation = json?.elevation;
     const arr = Array.isArray(elevation)
       ? elevation.map((x) => Number(x))
@@ -867,14 +888,17 @@ async function fetchElevations(points, { signal }) {
       out[missingIndices[i]] = value;
     }
     return out;
-  } catch {
+  } catch (err) {
     // Fallback: fetch individually (some environments/proxies dislike comma-separated params).
+    // Only fallback if not a rate limit error
+    if (err?.status === 429) throw err;
+
     for (let i = 0; i < missing.length; i++) {
       const p = missing[i];
       const single = new URL("https://api.open-meteo.com/v1/elevation");
       single.searchParams.set("latitude", p.lat.toFixed(5));
       single.searchParams.set("longitude", p.lon.toFixed(5));
-      const json = await fetchJson(single.toString(), { signal, timeoutMs: 20_000 });
+      const json = await fetchJson(single.toString(), { signal, timeoutMs: 10_000, retries: 2 });
       const elevation = Array.isArray(json?.elevation) ? json.elevation[0] : json?.elevation;
       const value = Number(elevation);
       if (!Number.isFinite(value)) throw new Error("Elevation data missing.");
@@ -1215,12 +1239,13 @@ async function fetchBeachesNear({ lat, lon, radiusKm, signal }) {
           },
           body,
           signal,
-          timeoutMs: 35_000,
+          timeoutMs: 20_000,
+          retries: 1,
         });
       } catch (err) {
         const url = new URL(endpoint);
         url.searchParams.set("data", query);
-        json = await fetchJson(url.toString(), { signal, timeoutMs: 35_000 });
+        json = await fetchJson(url.toString(), { signal, timeoutMs: 20_000, retries: 1 });
       }
       const parsed = parseOverpassElements(json.elements);
       return parsed;
@@ -1276,7 +1301,7 @@ async function geocodePlace(query, { signal }) {
     url.searchParams.set("lon", String(bias.lon));
   }
 
-  const json = await fetchJson(url.toString(), { signal, timeoutMs: 20_000 });
+  const json = await fetchJson(url.toString(), { signal, timeoutMs: 15_000, retries: 2 });
   const feature = json?.features?.[0];
   if (!feature) throw new Error("Hmm, can't find that place.");
 
@@ -1365,14 +1390,14 @@ async function analyzeNextBatch({ batchSize = 8 } = {}) {
   const batch = remaining.slice(0, Math.max(1, batchSize));
 
   setStatus(
-    "Checking today’s conditions…",
+    "Checking today's conditions…",
     "This can take a moment…",
   );
 
   const controller = state.inFlight;
   const analyzed = await mapWithConcurrency(batch, 2, async (beach) => {
     if (controller?.signal?.aborted) throw controller.signal.reason;
-    setStatus("Checking today’s conditions…", beach.name);
+    setStatus("Checking today's conditions…", beach.name);
     try {
       return await analyzeBeach(beach, {
         radiusKm: search.radiusKm,
@@ -1380,9 +1405,15 @@ async function analyzeNextBatch({ batchSize = 8 } = {}) {
         fallbackWind: state.windAtSearch,
       });
     } catch (err) {
+      // Check if it's a rate limit error
+      const isRateLimit = err?.status === 429 || (err instanceof Error && /rate limit|too many requests/i.test(err.message));
+      const errorMsg = isRateLimit
+        ? "Rate limited - try again in a moment"
+        : (err instanceof Error ? err.message : String(err));
+
       return {
         ...beach,
-        analysis: { error: err instanceof Error ? err.message : String(err) },
+        analysis: { error: errorMsg },
       };
     }
   });
@@ -1396,7 +1427,7 @@ async function analyzeNextBatch({ batchSize = 8 } = {}) {
 
   setStatus(
     "Updated picks.",
-    state.displayCount < state.beaches.length ? "Want more options? Tap “Show more beaches”." : "",
+    state.displayCount < state.beaches.length ? "Want more options? Tap "Show more beaches"." : "",
   );
 }
 
@@ -1439,7 +1470,15 @@ ui.analyzeMore.addEventListener("click", async () => {
 
   const extra = 12;
   const target = Math.min(state.beaches.length, state.analyzedCount + extra);
-  ensureAnalysisUpTo(target).catch(() => {});
+  ensureAnalysisUpTo(target).catch((err) => {
+    console.error("Analysis error:", err);
+    const isRateLimit = err?.status === 429 || (err instanceof Error && /rate limit|too many requests/i.test(err.message));
+    if (isRateLimit) {
+      setStatus("Hit API rate limits.", "Wait a minute and try again.");
+    } else {
+      setStatus("Something went wrong.", "Try again in a moment.");
+    }
+  });
 });
 
 ui.form.addEventListener("submit", async (e) => {
@@ -1457,7 +1496,13 @@ ui.form.addEventListener("submit", async (e) => {
   try {
     const geo = await geocodePlace(query, { signal: controller.signal });
     await runSearchAt({ lat: geo.lat, lon: geo.lon, label: geo.name });
-    ensureAnalysisUpTo(Math.min(state.beaches.length, 18)).catch(() => {});
+    ensureAnalysisUpTo(Math.min(state.beaches.length, 18)).catch((err) => {
+      console.error("Analysis error:", err);
+      const isRateLimit = err?.status === 429 || (err instanceof Error && /rate limit|too many requests/i.test(err.message));
+      if (isRateLimit) {
+        setStatus("Hit API rate limits.", "Some beaches couldn't be checked. Wait a minute and try again.");
+      }
+    });
   } catch (err) {
     if (isAbortError(err)) {
       setStatus("Canceled.");
@@ -1483,7 +1528,13 @@ ui.gpsBtn.addEventListener("click", async () => {
   try {
     const loc = await getBrowserLocation();
     await runSearchAt({ lat: loc.lat, lon: loc.lon, label: "your spot" });
-    ensureAnalysisUpTo(Math.min(state.beaches.length, 18)).catch(() => {});
+    ensureAnalysisUpTo(Math.min(state.beaches.length, 18)).catch((err) => {
+      console.error("Analysis error:", err);
+      const isRateLimit = err?.status === 429 || (err instanceof Error && /rate limit|too many requests/i.test(err.message));
+      if (isRateLimit) {
+        setStatus("Hit API rate limits.", "Some beaches couldn't be checked. Wait a minute and try again.");
+      }
+    });
   } catch (err) {
     if (isAbortError(err)) {
       setStatus("Canceled.");
