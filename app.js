@@ -478,7 +478,10 @@ function openCard(index, lat, lon, windDirDeg) {
     }).setView([lat, lon], 14);
 
     L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+      "https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg",
+      {
+        maxZoom: 16,
+      }
     ).addTo(map);
 
     const beachIcon = L.divIcon({
