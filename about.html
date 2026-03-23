@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#FFF8E7" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="app.css" />
+    <title>About – SunnySide</title>
+    <style>
+      .about-wrap {
+        width: 90%;
+        max-width: 600px;
+        padding-bottom: 60px;
+      }
+
+      .about-hero {
+        text-align: center;
+        padding: 28px 0 18px;
+      }
+
+      .about-hero .emoji {
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      .about-hero h1 {
+        font-size: 2.2rem;
+        margin: 0 0 6px;
+      }
+
+      .about-hero p {
+        color: #666;
+        font-weight: 700;
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .about-section {
+        background: #fff;
+        border-radius: 20px;
+        border: 2px solid #eee;
+        box-shadow: 0 6px 0 rgba(0,0,0,0.04);
+        padding: 20px 22px;
+        margin-bottom: 16px;
+      }
+
+      .about-section h2 {
+        font-family: "Fredoka", system-ui, sans-serif;
+        color: var(--ocean-dark);
+        font-size: 1.2rem;
+        margin: 0 0 12px;
+      }
+
+      .about-section p {
+        color: #555;
+        font-weight: 700;
+        margin: 0 0 10px;
+        line-height: 1.6;
+        font-size: 0.95rem;
+      }
+
+      .about-section p:last-child { margin-bottom: 0; }
+
+      .about-section ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #555;
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+
+      .about-section li {
+        margin: 8px 0;
+        line-height: 1.5;
+      }
+
+      .score-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      .score-table th {
+        text-align: left;
+        color: #888;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        padding: 6px 8px 6px 0;
+        border-bottom: 1px solid #eee;
+      }
+
+      .score-table td {
+        padding: 8px 8px 8px 0;
+        border-bottom: 1px solid #f4f4f4;
+        color: #555;
+        vertical-align: middle;
+      }
+
+      .score-table tr:last-child td { border-bottom: none; }
+
+      .badge-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: #fff;
+      }
+
+      .team-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 4px;
+      }
+
+      .team-member {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .team-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        background: var(--sand);
+        border: 2px solid var(--sand-dark);
+        flex-shrink: 0;
+      }
+
+      .team-info strong {
+        display: block;
+        color: var(--ocean-dark);
+        font-family: "Fredoka", system-ui, sans-serif;
+        font-size: 1rem;
+      }
+
+      .team-info span {
+        color: #888;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .stat-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 4px;
+      }
+
+      .stat-pill {
+        flex: 1;
+        background: var(--sand);
+        border: 2px solid var(--sand-dark);
+        border-radius: 16px;
+        text-align: center;
+        padding: 12px 8px;
+      }
+
+      .stat-pill .val {
+        display: block;
+        font-family: "Fredoka", system-ui, sans-serif;
+        font-size: 1.5rem;
+        color: var(--ocean-dark);
+      }
+
+      .stat-pill .lbl {
+        font-size: 0.75rem;
+        color: #888;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      .footer-note {
+        text-align: center;
+        color: #aaa;
+        font-size: 0.82rem;
+        font-weight: 700;
+        margin-top: 10px;
+        padding-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="app-header-row">
+        <a href="index.html" class="icon-btn" aria-label="Back to app" style="text-decoration:none;">←</a>
+        <h1>🏖️ SunnySide</h1>
+        <span></span>
+      </div>
+      <p class="subtitle">About this app</p>
+    </header>
+
+    <div class="about-wrap">
+
+      <div class="about-hero">
+        <span class="emoji">☀️</span>
+        <h1>Hey, we're SunnySide</h1>
+        <p>Your personal beach scout — powered by wind science.</p>
+      </div>
+
+      <!-- Mission -->
+      <div class="about-section">
+        <h2>🌊 What we do</h2>
+        <p>SunnySide helps you find the most sheltered, comfortable beach near you — right now, based on live wind and terrain data.</p>
+        <p>We scan dozens of beaches in your area, check the current wind conditions at each one, model how nearby hills and headlands affect shelter, and give every beach a simple comfort score so you can just show up and relax.</p>
+      </div>
+
+      <!-- How scoring works -->
+      <div class="about-section">
+        <h2>🏅 How we score beaches</h2>
+        <p>Each beach gets a comfort score from 0–100 based on a few key factors:</p>
+        <ul>
+          <li><strong>Wind speed & gusts</strong> — lower is better. We model wind at human height (~2m), not the 10m weather station standard.</li>
+          <li><strong>Terrain shelter</strong> — hills and headlands upwind reduce felt wind significantly. We sample elevation in a cone upwind to estimate this.</li>
+          <li><strong>Shore orientation</strong> — a beach facing directly into the wind feels harsher than one running parallel to it.</li>
+          <li><strong>Sun & cloud cover</strong> — a sunny day bumps the score; heavy overcast knocks it down a little.</li>
+          <li><strong>Distance</strong> — a slight penalty for beaches farther away, so a mediocre spot nearby can still beat a great one an hour away.</li>
+        </ul>
+        <table class="score-table">
+          <thead>
+            <tr><th>Label</th><th>Score</th><th>What it means</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="badge-pill" style="background:var(--success)">Best bet</span></td><td>82–100</td><td>Go. Right now.</td></tr>
+            <tr><td><span class="badge-pill" style="background:var(--success)">Good</span></td><td>68–81</td><td>Comfortable, worth it.</td></tr>
+            <tr><td><span class="badge-pill" style="background:var(--warning)">OK</span></td><td>52–67</td><td>Fine if you don't mind a breeze.</td></tr>
+            <tr><td><span class="badge-pill" style="background:var(--danger)">Skip</span></td><td>0–51</td><td>Probably too windy to enjoy.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Data sources -->
+      <div class="about-section">
+        <h2>📡 Where the data comes from</h2>
+        <ul>
+          <li><strong>Beach locations</strong> — OpenStreetMap via the Overpass API. We search for beaches, bays, coves and beach resorts tagged in the map.</li>
+          <li><strong>Live wind</strong> — Open-Meteo, a free open-source weather API. Wind speed, gusts, and direction updated hourly.</li>
+          <li><strong>Elevation / terrain</strong> — Also Open-Meteo's elevation endpoint, based on SRTM 90m DEM data.</li>
+          <li><strong>Geocoding</strong> — Photon by Komoot, powered by OpenStreetMap data.</li>
+          <li><strong>Maps</strong> — Leaflet.js with Esri World Topo basemap tiles.</li>
+        </ul>
+        <p>All data sources are free and open. SunnySide does not store your location on any server — everything runs in your browser.</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="about-section">
+        <h2>📊 By the numbers</h2>
+        <div class="stat-row">
+          <div class="stat-pill">
+            <span class="val">50+</span>
+            <span class="lbl">Beaches per search</span>
+          </div>
+          <div class="stat-pill">
+            <span class="val">6</span>
+            <span class="lbl">Upwind ray angles</span>
+          </div>
+          <div class="stat-pill">
+            <span class="val">~2m</span>
+            <span class="lbl">Wind model height</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team -->
+      <div class="about-section">
+        <h2>👋 The team</h2>
+        <div class="team-grid">
+          <div class="team-member">
+            <div class="team-avatar">🧑‍💻</div>
+            <div class="team-info">
+              <strong>Jordan Park</strong>
+              <span>Founder & Lead Developer — obsessed with wind physics and cold swims.</span>
+            </div>
+          </div>
+          <div class="team-member">
+            <div class="team-avatar">🎨</div>
+            <div class="team-info">
+              <strong>Mia Leilani</strong>
+              <span>Design & UX — grew up on the North Shore and hates windy beaches.</span>
+            </div>
+          </div>
+          <div class="team-member">
+            <div class="team-avatar">🌦️</div>
+            <div class="team-info">
+              <strong>Dr. Sam Nguyen</strong>
+              <span>Weather Science Advisor — atmospheric physicist, surfer, occasional kite flier.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Version -->
+      <div class="about-section">
+        <h2>ℹ️ App info</h2>
+        <ul>
+          <li><strong>Version</strong> — 1.2.0</li>
+          <li><strong>Last updated</strong> — March 2025</li>
+          <li><strong>Platform</strong> — Progressive Web App (works offline after first visit)</li>
+          <li><strong>License</strong> — MIT. Free to use and build on.</li>
+        </ul>
+      </div>
+
+      <p class="footer-note">Made with ☀️ for beach lovers everywhere.</p>
+    </div>
+  </body>
+</html>
