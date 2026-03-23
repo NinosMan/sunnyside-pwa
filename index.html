@@ -33,9 +33,9 @@
     <header>
       <div class="app-header-row">
         <h1>🏖️ SunnySide</h1>
-        <button class="icon-btn" id="aboutBtn" type="button" aria-label="How we decide">?</button>
+        <a class="icon-btn" href="about.html" aria-label="About SunnySide" style="text-decoration:none;">?</a>
       </div>
-      <p class="subtitle">A simple “best beach right now”</p>
+      <p class="subtitle">A simple "best beach right now"</p>
     </header>
 
     <div id="controls">
@@ -67,37 +67,6 @@
     <div id="status" aria-live="polite"></div>
     <section id="topPick" class="top-pick" hidden></section>
     <div id="results"></div>
-
-    <div id="aboutModal" class="modal" hidden>
-      <div class="modal-backdrop" data-close="true"></div>
-      <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
-        <div class="modal-head">
-          <h2 id="aboutTitle">How SunnySide picks</h2>
-          <button class="icon-btn" id="aboutClose" type="button" aria-label="Close">✕</button>
-        </div>
-        <div class="modal-body">
-          <p>
-            SunnySide does a nerdy wind + shelter check in the background, then shows only quick labels.
-          </p>
-          <ul>
-            <li>Finds nearby beaches/bays/coves from OpenStreetMap.</li>
-            <li>Gets current wind (speed, gust, direction) from Open‑Meteo.</li>
-            <li>Estimates hill/headland shelter by sampling elevations upwind.</li>
-            <li>Scores “how comfy to sit/lie down” using pedestrian wind comfort criteria (Lawson/Davenport).</li>
-          </ul>
-          <details>
-            <summary>Nerdy details</summary>
-            <p>
-              Converts 10m wind to “at-the-beach” height using a log wind profile:
-              <code>U(z)=U(10m)*ln(z/z0)/ln(10/z0)</code>.
-            </p>
-            <p>
-              Shelter uses the upwind blocking angle <code>atan(Δh/d)</code> (bigger/closer hills → more shelter).
-            </p>
-          </details>
-        </div>
-      </div>
-    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module" src="app.js"></script>
