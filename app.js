@@ -23,9 +23,6 @@ const ui = {
   results: $("#results"),
   radiusKm: $("#radiusKm"),
   analyzeMore: $("#analyze-more"),
-  aboutBtn: $("#aboutBtn"),
-  aboutModal: $("#aboutModal"),
-  aboutClose: $("#aboutClose"),
 };
 
 const DEG2RAD = Math.PI / 180;
@@ -371,7 +368,7 @@ function renderBeaches(beaches, { showUnanalyzed = false } = {}) {
     if (beach.analysis?.error) {
       const detail = document.createElement("div");
       detail.className = "card-detail";
-      detail.textContent = "Couldn’t check conditions just now.";
+      detail.textContent = "Couldn't check conditions just now.";
       summary.append(detail);
     }
     summary.append(expandHint);
@@ -608,34 +605,6 @@ function registerServiceWorker() {
     } catch {
       // no-op
     }
-  });
-}
-
-function setAboutOpen(isOpen) {
-  if (!ui.aboutModal) return;
-  ui.aboutModal.hidden = !isOpen;
-  document.documentElement.style.overflow = isOpen ? "hidden" : "";
-  document.body.style.overflow = isOpen ? "hidden" : "";
-}
-
-function wireAboutModal() {
-  if (ui.aboutBtn) {
-    ui.aboutBtn.addEventListener("click", () => setAboutOpen(true));
-  }
-  if (ui.aboutClose) {
-    ui.aboutClose.addEventListener("click", () => setAboutOpen(false));
-  }
-  if (ui.aboutModal) {
-    ui.aboutModal.addEventListener("click", (e) => {
-      const target = e.target;
-      if (!(target instanceof Element)) return;
-      if (target.closest("[data-close=\"true\"]")) setAboutOpen(false);
-    });
-  }
-  window.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-    if (!ui.aboutModal || ui.aboutModal.hidden) return;
-    setAboutOpen(false);
   });
 }
 
@@ -894,8 +863,6 @@ async function estimateTerrainShelterAt({ lat, lon, windFromDeg, signal }) {
   const cached = getCachedValue(shelterCache, cacheKey, 45 * 60_000);
   if (cached) return cached;
 
-  // Sample upwind terrain and convert the “blocking angle” into a shelter reduction.
-  // This is a common engineering proxy: larger vertical angles (hill close + tall) imply stronger shelter.
   const distancesM = [400, 900, 1800, 3500, 6000, 8500];
   const rayOffsets = [0, -15, 15, -30, 30];
 
@@ -926,7 +893,7 @@ async function estimateTerrainShelterAt({ lat, lon, windFromDeg, signal }) {
     if (angle > prev) maxAngleByOffset.set(sample.offsetDeg, angle);
   }
 
-  const angleScale = 0.08; // ~4.6°
+  const angleScale = 0.08;
   let combined = 0;
   for (const [offsetDeg, angleRad] of maxAngleByOffset.entries()) {
     if (!(angleRad > 0)) continue;
@@ -967,14 +934,12 @@ function windAtHeightKmh(windKmh, { fromHeightM = 10, toHeightM = 2, roughnessM 
 
 function toBeaufort(windKmh) {
   if (!Number.isFinite(windKmh) || windKmh < 0) return null;
-  const v = windKmh / 3.6; // m/s
+  const v = windKmh / 3.6;
   const b = Math.pow(v / 0.836, 2 / 3);
   return clamp(b, 0, 12);
 }
 
 function sunbathingComfortFromWindMps(windMps) {
-  // “Proven” baselines: Lawson/Davenport pedestrian wind comfort thresholds.
-  // For lying/sitting at the beach, comfort drops sharply above ~4 m/s and is poor above ~8 m/s.
   if (!Number.isFinite(windMps) || windMps < 0) return 0.35;
   if (windMps <= 2) return 1;
   if (windMps <= 4) return lerp(1, 0.85, (windMps - 2) / 2);
@@ -988,7 +953,6 @@ function sunFactor(isDay, cloudCoverPct) {
   if (isDay === false) return 0.2;
   if (isDay === null || typeof isDay === "undefined") return 0.6;
   const cloud = Number.isFinite(cloudCoverPct) ? clamp(cloudCoverPct, 0, 100) : 50;
-  // 0% clouds → 1, 50% → 0.7, 100% → 0.35
   const clearScore = 1 - cloud / 100;
   const scaled = 0.35 + clearScore * 0.65;
   return clamp(scaled, 0, 1);
@@ -996,7 +960,6 @@ function sunFactor(isDay, cloudCoverPct) {
 
 function sunbathingComfortFromBeaufort(beaufort) {
   if (!Number.isFinite(beaufort)) return 0.35;
-  // Tuned for “chill swim / sunbathe”: B~2-3 is ideal, B>=5 is usually not pleasant.
   const midpoint = 3.4;
   const slope = 0.7;
   return 1 / (1 + Math.exp((beaufort - midpoint) / slope));
@@ -1045,7 +1008,6 @@ async function analyzeBeach(beach, { radiusKm, signal, fallbackWind }) {
         shorelineAxisDeg = shorelineFromElevation.shorelineAxisDeg;
       }
     } catch {
-      // Optional only.
       shorelineFromElevation = null;
     }
   }
@@ -1063,14 +1025,12 @@ async function analyzeBeach(beach, { radiusKm, signal, fallbackWind }) {
     shelterReduction = shelter.reduction;
   }
 
-  // Convert 10m model wind to ~2m human-height wind via neutral log-law.
   const wind2m = windAtHeightKmh(windData.windSpeedKmh);
   const gust2m = windAtHeightKmh(windData.windGustKmh ?? null);
 
   const eff2m = effectiveWindKmh({ windKmh: wind2m, gustKmh: gust2m });
   const sheltered2m = Number.isFinite(eff2m) ? eff2m * (1 - shelterReduction) : null;
 
-  // Cross-shore winds tend to feel harsher on the sand.
   const exposureFactor = 0.65 + 0.35 * exposure;
   const feltWindKmh = Number.isFinite(sheltered2m) ? sheltered2m * exposureFactor : null;
 
@@ -1242,12 +1202,12 @@ function errorMessage(err) {
 function friendlySearchFailure(err) {
   const msg = errorMessage(err);
   if (/can't find that place/i.test(msg)) {
-    return { line: "Hmm, can’t find that place.", detail: "Try a suburb, city, or landmark.", placeholder: "Try another place." };
+    return { line: "Hmm, can't find that place.", detail: "Try a suburb, city, or landmark.", placeholder: "Try another place." };
   }
   if (/timed out/i.test(msg)) {
     return { line: "That took too long.", detail: "Try again in a moment.", placeholder: "Try again." };
   }
-  if (/request failed \\(4\\d\\d\\)/i.test(msg) || /request failed \\(5\\d\\d\\)/i.test(msg)) {
+  if (/request failed \(4\d\d\)/i.test(msg) || /request failed \(5\d\d\)/i.test(msg)) {
     return { line: "Map services are having a moment.", detail: "Try again in a bit.", placeholder: "Try again soon." };
   }
   return { line: "Something went wrong.", detail: "Try again in a moment.", placeholder: "Try again." };
@@ -1261,7 +1221,7 @@ function friendlyGpsFailure(err) {
   if (/timed out/i.test(msg)) {
     return { line: "GPS took too long.", detail: "Try again, or search by place.", placeholder: "Try searching instead." };
   }
-  return { line: "Couldn’t use GPS.", detail: "Try searching by place name.", placeholder: "Try searching instead." };
+  return { line: "Couldn't use GPS.", detail: "Try searching by place name.", placeholder: "Try searching instead." };
 }
 
 async function geocodePlace(query, { signal }) {
@@ -1352,7 +1312,7 @@ async function runSearchAt({ lat, lon, label }) {
   renderCurrent();
   setStatus(
     `Found beaches near ${label}.`,
-    byDistance.length <= 2 ? "Not seeing enough? Try “Explore”." : "Checking conditions for the first few…",
+    byDistance.length <= 2 ? "Not seeing enough? Try "Explore"." : "Checking conditions for the first few…",
   );
 }
 
@@ -1365,14 +1325,14 @@ async function analyzeNextBatch({ batchSize = 8 } = {}) {
   const batch = remaining.slice(0, Math.max(1, batchSize));
 
   setStatus(
-    "Checking today’s conditions…",
+    "Checking today's conditions…",
     "This can take a moment…",
   );
 
   const controller = state.inFlight;
   const analyzed = await mapWithConcurrency(batch, 2, async (beach) => {
     if (controller?.signal?.aborted) throw controller.signal.reason;
-    setStatus("Checking today’s conditions…", beach.name);
+    setStatus("Checking today's conditions…", beach.name);
     try {
       return await analyzeBeach(beach, {
         radiusKm: search.radiusKm,
@@ -1387,7 +1347,6 @@ async function analyzeNextBatch({ batchSize = 8 } = {}) {
     }
   });
 
-  // Merge analyzed back into state.
   const analyzedById = new Map(analyzed.map((b) => [b.id, b]));
   state.beaches = state.beaches.map((b) => analyzedById.get(b.id) ?? b);
   state.analyzedCount += batch.length;
@@ -1396,7 +1355,7 @@ async function analyzeNextBatch({ batchSize = 8 } = {}) {
 
   setStatus(
     "Updated picks.",
-    state.displayCount < state.beaches.length ? "Want more options? Tap “Show more beaches”." : "",
+    state.displayCount < state.beaches.length ? "Want more options? Tap "Show more beaches"." : "",
   );
 }
 
@@ -1416,7 +1375,6 @@ async function ensureAnalysisUpTo(targetCount) {
           signal: controller.signal,
         });
       } catch (err) {
-        // Optional fallback only; per-beach wind will still be attempted.
         state.windAtSearch = null;
       }
     }
@@ -1473,7 +1431,6 @@ ui.form.addEventListener("submit", async (e) => {
 });
 
 registerServiceWorker();
-wireAboutModal();
 
 ui.gpsBtn.addEventListener("click", async () => {
   const controller = startNewSearch();
@@ -1499,5 +1456,5 @@ ui.gpsBtn.addEventListener("click", async () => {
 });
 
 loadSavedLocation();
-setStatus("Enter a place to begin.", "Tip: search a city, or tap “Find Near Me”.");
+setStatus("Enter a place to begin.", "Tip: search a city, or tap "Find Near Me".");
 renderPlaceholder("No results yet.");
